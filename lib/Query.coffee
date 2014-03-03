@@ -73,11 +73,18 @@ module.exports = (db,app) ->
       if cb? then @run cb else @
 
     order: (rules, cb) ->
-      # unless @ordered
         if rules?
-          rules = switch typeOf rules
-            when 'string' then rules.trim().split(' ')
-            when 'function', 'asc', 'desc', 'object' then [rules]
+          if typeOf(rules) is 'string'
+            rules = rules.trim().split(' ')
+
+          unless typeOf(rules) is 'array'
+            rules = [rules]
+
+          rules = for rule in rules
+            if typeOf(rule) is 'string'
+              if rule[0] is '-' then r.desc rule[1..] else rule
+            else if typeOf(rule) is 'object'
+              if rule.index[0] is '-' then index: r.desc rule.index[1..] else rule
 
           @query = @query.orderBy.apply @query, rules
           # @ordered = yes

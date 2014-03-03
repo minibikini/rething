@@ -31,6 +31,7 @@ module.exports = class DbManager extends EventEmitter
         else
           @emit 'ready'
 
+    @rr = r
     @r = r.db(@config.db)
 
   connect: (cb = ->) ->
@@ -85,7 +86,7 @@ module.exports = class DbManager extends EventEmitter
 
   loadModels: ->
     r.tableList().run @getConn(), (err, @tableList) =>
-      glob "#{__dirname}/../models/*.coffee", (err, files) =>
+      glob "#{@config.modelsFolder}/*.coffee", (err, files) =>
         async.each files, @loadModel, (err) =>
           @emit 'modelsLoaded'
 
