@@ -1,0 +1,127 @@
+r = require 'rethinkdb'
+typeOf = require('typeof')
+js_beautify = require('js-beautify').js_beautify
+chalk = require 'chalk'
+
+beautify = (str) ->
+  opts =
+    indent_size: 2
+
+  js_beautify str, opts
+
+
+wrapAsync = require './wrapAsync'
+
+module.exports = (db,app) ->
+  class Query
+    collection: no
+    ordered: no
+    wrap: yes
+
+    constructor: (@model, @query) ->
+
+    toRQL: -> @query
+
+    # wrap: (item) ->
+    #   d = new @model item
+    #   d.isNewRecord = no
+    #   d.wrapRelated()
+    #   d
+
+    run: (cb) ->
+      opts =
+        connection: db.getConn()
+        # profile: on
+        # useOutdated: no
+
+      if db.config.logQueries
+        startTime = Date.now()
+        queryStr = @query.toString()
+
+      @query.run opts, (err, data) =>
+        if db.config.logQueries
+          console.log chalk.gray "=========================================="
+          queryStr =  beautify queryStr
+          queryStr = queryStr.split('\n')[0] if db.config.logQueries is 'short'
+          console.log chalk.green("Executed ReQL (#{Date.now()-startTime}ms): \n"), queryStr
+
+        return cb err if err?
+
+        if not @wrap
+          cb err, data
+        else
+          wrapAsync data, @model, {isNew: no, wrapRelated: yes}, (err, data) =>
+            return cb err if err?
+            if not @collection and typeOf(data) is 'array'
+              data = if data.length then data[0] else null
+            cb err, data
+
+    with: (rels, cb) ->
+      rels = rels.trim().split(' ') if typeOf(rels) is 'string'
+      rels = [rels] if typeOf(rels) is 'object'
+
+      rels = for rel in rels
+        if typeOf(rel) is 'object'
+          rel
+        else
+          name: rel
+
+      @order()
+
+      @query = @model.relatedQuery(rels, @query)
+
+      if cb? then @run cb else @
+
+    order: (rules, cb) ->
+      # unless @ordered
+        if rules?
+          rules = switch typeOf rules
+            when 'string' then rules.trim().split(' ')
+            when 'function', 'asc', 'desc', 'object' then [rules]
+
+          @query = @query.orderBy.apply @query, rules
+          # @ordered = yes
+
+        if cb? then @run cb else @
+
+    skip: (num, cb) ->
+      @query = @query.skip num
+      if cb? then @run cb else @
+
+    limit: (num, cb) ->
+      @query = @query.limit num
+      if cb? then @run cb else @
+
+    count: (cb) ->
+      @query = @query.count()
+      @wrap = no
+      if cb? then @run cb else @
+
+    groupBy: (key, reductionObject, cb) ->
+      @query = @query.groupBy(key, reductionObject)
+      if cb? then @run cb else @
+
+    map: (fn, cb) ->
+      @query = @query.map(fn)
+      if cb? then @run cb else @
+
+    concatMap: (fn, cb) ->
+      @query = @query.concatMap(fn)
+      if cb? then @run cb else @
+
+
+    filter: (query) ->
+
+    increment: (field, num, cb) ->
+      if arguments.length is 2
+        cb = num
+        num = 1
+
+      update = {}
+      update[field] = r.row(field).add(num)
+
+      @query
+        .update(update, return_vals: yes)
+        .run db.getConn(), (err, reply) =>
+          return cb err if err?
+          cb()
