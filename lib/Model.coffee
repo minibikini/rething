@@ -314,3 +314,9 @@ module.exports = (db,app) ->
           async.apply wrap, key, db.models[opts.model]
 
       async.parallel wrapRelations, cb
+
+    remove: (cb = ->) ->
+      c = @constructor
+      c.r().get(@id).delete().run db.conn, cb
+
+    'delete': (cb = ->) -> @remove cb
