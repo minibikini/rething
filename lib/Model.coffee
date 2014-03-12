@@ -304,14 +304,19 @@ module.exports = (db,app) ->
       query
 
     wrapRelated: (cb) ->
+      wrapRelations = []
+
       wrap = (key, ModelClass, done) =>
         wrapAsync @[key], ModelClass, {isNew: no, wrapRelated: yes}, (err, data) =>
           @[key] = data
           done(err)
 
+      console.log '@constructor.relations', @constructor.relations
+
       for relname, rels of @constructor.relations
         wrapRelations = for key, opts of rels when @[key]?
           async.apply wrap, key, db.models[opts.model]
+
 
       async.parallel wrapRelations, cb
 
