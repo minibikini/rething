@@ -95,6 +95,8 @@ module.exports = class DbManager extends EventEmitter
       for key, opts of model.schema when typeOf(opts) is 'object' and opts.index?
         model.indexes[key] = opts.index
 
+      model.relations ?= {}
+
       if model.relations.hasMany?
         for name, opts of model.relations.hasMany
           unless @models[opts.model]?
