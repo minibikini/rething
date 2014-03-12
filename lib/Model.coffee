@@ -311,8 +311,6 @@ module.exports = (db,app) ->
           @[key] = data
           done(err)
 
-      console.log '@constructor.relations', @constructor.relations
-
       for relname, rels of @constructor.relations
         wrapRelations = for key, opts of rels when @[key]?
           async.apply wrap, key, db.models[opts.model]
