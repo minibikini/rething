@@ -22,10 +22,9 @@ module.exports = class DbManager extends EventEmitter
       @loadModels()
 
     @on 'db:ensureIndexes:ready', =>
-      @emit 'ready'
+        @emit 'ready'
 
     @on 'modelsLoaded', =>
-      process.nextTick =>
         if @config.ensureIndexes
           @ensureIndexes()
         else
@@ -88,7 +87,7 @@ module.exports = class DbManager extends EventEmitter
     r.tableList().run @getConn(), (err, @tableList) =>
       glob "#{@config.modelsFolder}/*.coffee", (err, files) =>
         async.each files, @loadModel, (err) =>
-          @emit 'modelsLoaded'
+          process.nextTick => @emit 'modelsLoaded'
 
   ensureIndexes: ->
     for modelName, model of @models
@@ -111,6 +110,7 @@ module.exports = class DbManager extends EventEmitter
 
     @app.logger.trace "waiting for indexes"
     async.each models, ((model, cb) -> model.createIndexes(cb)), (err) =>
-      @app.logger.trace "db:ensureIndexes:ready"
-      @emit "db:ensureIndexes:ready"
+      process.nextTick =>
+        @app.logger.trace "db:ensureIndexes:ready"
+        @emit "db:ensureIndexes:ready"
 
