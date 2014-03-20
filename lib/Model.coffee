@@ -63,8 +63,6 @@ module.exports = (db,app) ->
             models = wrapModel models, RelModel
             @[name] = models
 
-
-
           @::["add" + capSingName] = (model,  cb = ->) ->
             model = wrapModel model, RelModel
             @[name] ?= []
@@ -88,7 +86,7 @@ module.exports = (db,app) ->
           RelModel.r().get(@[opts.foreignKey]).run db.conn, RelModel.wrapReply cb
 
         @["getBy" + capName] = (id, cb = ->) =>
-            query = new Query @, @r().getAll(id, {index:'questionId'})
+            query = new Query @, @r().getAll(id, {index:opts.foreignKey})
             query.collection = yes
             if cb?
               query.run cb
