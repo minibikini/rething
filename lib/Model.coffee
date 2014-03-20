@@ -302,6 +302,10 @@ module.exports = (db,app) ->
               relQuery.order(withRel.order) if withRel.order?
             obj[name] = relQuery.toRQL().coerceTo('array')
 
+        for name, rel of @relations.belongsTo
+          tableName = db.models[rel.model].tableName
+          obj[name] =  r.db(db.config.db).table(tableName).get(item(rel.foreignKey))
+
         item.merge obj
       query
 
