@@ -53,7 +53,7 @@ module.exports = (db,app) ->
           capSingName = inflection.singularize capName
 
           RelModel = db.models[opts.model]
-          RelModel.schema[opts.foreignKey] = String
+          RelModel.schema[opts.foreignKey] ?= String
 
           # add getter
           @::["get" + capName] = (cb = ->) ->
