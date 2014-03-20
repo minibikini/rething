@@ -53,6 +53,8 @@ module.exports = (db,app) ->
           capSingName = inflection.singularize capName
 
           RelModel = db.models[opts.model]
+          RelModel.schema[opts.foreignKey] = String
+
           # add getter
           @::["get" + capName] = (cb = ->) ->
             RelModel.r().getAll(@getId(), index: opts.foreignKey).run db.conn, RelModel.wrapReply cb
@@ -60,6 +62,8 @@ module.exports = (db,app) ->
           @::["set" + capName] = (models, cb = ->) ->
             models = wrapModel models, RelModel
             @[name] = models
+
+
 
           @::["add" + capSingName] = (model,  cb = ->) ->
             model = wrapModel model, RelModel
