@@ -44,6 +44,8 @@ module.exports = class DbManager extends EventEmitter
         @emit "connect"
     @
 
+  close: (cb = ->) -> @conn.close cb
+
   getConn: -> @conn
 
   checkDb: ->
