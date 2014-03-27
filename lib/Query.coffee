@@ -29,8 +29,8 @@ module.exports = (db,app) ->
     #   d
 
     run: (cb) ->
-      opts =
-        connection: db.getConn()
+      opts = {}
+        # connection: db.getConn()
         # profile: on
         # useOutdated: no
 
@@ -38,7 +38,7 @@ module.exports = (db,app) ->
         startTime = Date.now()
         queryStr = @query.toString()
 
-      @query.run opts, (err, data) =>
+      @query.run db.getConn(), opts, (err, data) =>
         if db.config.logQueries
           console.log chalk.gray "=========================================="
           queryStr =  beautify queryStr
@@ -104,8 +104,8 @@ module.exports = (db,app) ->
       @wrap = no
       if cb? then @run cb else @
 
-    groupBy: (key, reductionObject, cb) ->
-      @query = @query.groupBy(key, reductionObject)
+    group: (key, cb) ->
+      @query = @query.group(key)
       if cb? then @run cb else @
 
     map: (fn, cb) ->

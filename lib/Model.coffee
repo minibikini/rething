@@ -291,7 +291,7 @@ module.exports = (db,app) ->
               relQuery.with(withRel.with) if withRel.with?
             else
               relQuery = db.models[rel.throughModel].getBy(rel.throughForeignKey, item('id'))
-              relQuery.groupBy rel.foreignKey, r.count
+              relQuery.group rel.foreignKey
               relQuery.skip(withRel.skip) if withRel.skip?
               relQuery.limit(withRel.limit) if withRel.limit?
               relQuery.concatMap (item) =>

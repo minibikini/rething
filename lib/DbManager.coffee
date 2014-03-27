@@ -22,13 +22,13 @@ module.exports = class DbManager extends EventEmitter
       @loadModels()
 
     @on 'db:ensureIndexes:ready', =>
-        @emit 'ready'
+      @emit 'ready'
 
     @on 'modelsLoaded', =>
-        if @config.ensureIndexes
-          @ensureIndexes()
-        else
-          @emit 'ready'
+      if @config.ensureIndexes
+        @ensureIndexes()
+      else
+        @emit 'ready'
 
     @rr = r
     @r = r.db(@config.db)
@@ -91,28 +91,30 @@ module.exports = class DbManager extends EventEmitter
         async.each files, @loadModel, (err) =>
           process.nextTick => @emit 'modelsLoaded'
 
-  ensureIndexes: ->
-    for modelName, model of @models
-      for key, opts of model.schema when typeOf(opts) is 'object' and opts.index?
-        model.indexes[key] = opts.index
+  ensureIndexes: (cb = ->) ->
+    process.nextTick =>
+      for modelName, model of @models
+        for key, opts of model.schema when typeOf(opts) is 'object' and opts.index?
+          model.indexes[key] = opts.index
 
-      model.relations ?= {}
+        model.relations ?= {}
 
-      if model.relations.hasMany?
-        for name, opts of model.relations.hasMany
-          unless @models[opts.model]?
-            return @app.logger.error "Unknown model:", opts.model
-          @models[opts.model].indexes[opts.foreignKey] = yes
+        if model.relations.hasMany?
+          for name, opts of model.relations.hasMany
+            unless @models[opts.model]?
+              return @app.logger.error "Unknown model:", opts.model
+            @models[opts.model].indexes[opts.foreignKey] = yes
 
-      if model.relations.belongsTo?
-        for name, opts of model.relations.belongsTo
-          model.indexes[opts.foreignKey] = yes
+        if model.relations.belongsTo?
+          for name, opts of model.relations.belongsTo
+            model.indexes[opts.foreignKey] = yes
 
-    models = (model for modelName, model of @models)
+      models = (model for modelName, model of @models)
 
-    @app.logger.trace "waiting for indexes"
-    async.each models, ((model, cb) -> model.createIndexes(cb)), (err) =>
-      process.nextTick =>
-        @app.logger.trace "db:ensureIndexes:ready"
-        @emit "db:ensureIndexes:ready"
+      @app.logger.trace "waiting for indexes"
+      async.each models, ((model, cb) -> model.createIndexes(cb)), (err) =>
+        process.nextTick =>
+          @app.logger.trace "db:ensureIndexes:ready"
+          @emit "db:ensureIndexes:ready"
+          cb()
 
