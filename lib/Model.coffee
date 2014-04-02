@@ -291,7 +291,9 @@ module.exports = (db,app) ->
               relQuery.with(withRel.with) if withRel.with?
             else
               relQuery = db.models[rel.throughModel].getBy(rel.throughForeignKey, item('id'))
-              relQuery.group rel.foreignKey
+              relQuery.group(rel.foreignKey)
+              relQuery.countBy(rel.foreignKey)
+              relQuery.ungroup()
               relQuery.skip(withRel.skip) if withRel.skip?
               relQuery.limit(withRel.limit) if withRel.limit?
               relQuery.concatMap (item) =>
@@ -311,16 +313,21 @@ module.exports = (db,app) ->
 
     wrapRelated: (cb) ->
       wrapRelations = []
-
+      # console.log @constructor.tableName, @constructor.relations
       wrap = (key, ModelClass, done) =>
+        # console.log 'ModelClass', ModelClass::constructor.name, @[key]
         wrapAsync @[key], ModelClass, {isNew: no, wrapRelated: yes}, (err, data) =>
           @[key] = data
           done(err)
 
       for relname, rels of @constructor.relations
-        wrapRelations = for key, opts of rels when @[key]?
-          async.apply wrap, key, db.models[opts.model]
-
+        console.log 'relname', relname
+        # wrapRelations = for key, opts of rels when @[key]?
+        wrapRelations = for key, opts of rels
+          console.log key, @[key]?
+          if @[key]?
+          # console.log db.models[opts.model]::constructor.name, key
+            async.apply wrap, key, db.models[opts.model]
 
       async.parallel wrapRelations, cb
 
