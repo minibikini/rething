@@ -104,8 +104,17 @@ module.exports = (db,app) ->
       @wrap = no
       if cb? then @run cb else @
 
+    countBy: (key, cb) ->
+      @query = @query.count(key)
+      @wrap = no
+      if cb? then @run cb else @
+
     group: (key, cb) ->
       @query = @query.group(key)
+      if cb? then @run cb else @
+
+    ungroup: (cb) ->
+      @query = @query.ungroup()
       if cb? then @run cb else @
 
     map: (fn, cb) ->
