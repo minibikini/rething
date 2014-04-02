@@ -3,6 +3,7 @@ AppSpine = require 'appspine'
 r = require 'rethinkdb'
 Rething = require '../'
 Faker = require 'Faker'
+typeOf = require 'typeof'
 
 getFakeUserData = ->
   firstName: Faker.Name.firstName()
@@ -47,10 +48,28 @@ describe 'Model', ->
           should.not.exist err
           done()
 
-    it 'should create a record for hasMany relation', (done) ->
-      post = user.addPost getFakePost()
-      should.not.exist post.id
-      user.save (err) ->
-        should.exist post.id
-        post.userId.should.equal user.id
-        done()
+    describe 'hasMany', ->
+      it 'should create a record for hasMany relation', (done) ->
+        post = user.addPost getFakePost()
+        should.not.exist post.id
+        user.save (err) ->
+          should.not.exist err
+          should.exist post.id
+          post.userId.should.equal user.id
+          done()
+
+      it 'should load hasMany relation', (done) ->
+        user.addPost getFakePost()
+        user.addPost getFakePost()
+        user.save (err) ->
+          should.not.exist err
+
+          rels =
+            name: 'posts'
+            # with: {name: 'answers', order: 'order'}
+
+          User.get(user.id).with rels, (err, u) ->
+            u.posts.should.be.an('array').with.lengthOf 3
+            # console.log 2, u.posts.length, typeOf u.posts
+            should.not.exist err
+            done()

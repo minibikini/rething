@@ -292,12 +292,12 @@ module.exports = (db,app) ->
             else
               relQuery = db.models[rel.throughModel].getBy(rel.throughForeignKey, item('id'))
               relQuery.group(rel.foreignKey)
-              relQuery.countBy(rel.foreignKey)
+              relQuery.count()
               relQuery.ungroup()
               relQuery.skip(withRel.skip) if withRel.skip?
               relQuery.limit(withRel.limit) if withRel.limit?
               relQuery.concatMap (item) =>
-                relQuery2 = db.models[rel.model].getBy('id', item('group')(rel.foreignKey))
+                relQuery2 = db.models[rel.model].getBy('id', item('group'))
                 relQuery2.with(withRel.with) if withRel.with?
                 relQuery2.toRQL().coerceTo('array')
 
@@ -313,7 +313,7 @@ module.exports = (db,app) ->
 
     wrapRelated: (cb) ->
       wrapRelations = []
-      # console.log @constructor.tableName, @constructor.relations
+      # console.log "wrapping ", @constructor.name
       wrap = (key, ModelClass, done) =>
         # console.log 'ModelClass', ModelClass::constructor.name, @[key]
         wrapAsync @[key], ModelClass, {isNew: no, wrapRelated: yes}, (err, data) =>
@@ -321,11 +321,10 @@ module.exports = (db,app) ->
           done(err)
 
       for relname, rels of @constructor.relations
-        console.log 'relname', relname
-        # wrapRelations = for key, opts of rels when @[key]?
-        wrapRelations = for key, opts of rels
-          console.log key, @[key]?
-          if @[key]?
+        # console.log 'relname', relname
+        wrapRelations = for key, opts of rels when @[key]?
+        # wrapRelations = for key, opts of rels
+          # if @[key]?
           # console.log db.models[opts.model]::constructor.name, key
             async.apply wrap, key, db.models[opts.model]
 

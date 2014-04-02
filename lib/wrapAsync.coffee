@@ -1,5 +1,6 @@
 typeOf = require 'typeof'
 async = require 'async'
+inspect = require('util').inspect
 
 module.exports = (data, ModelClass, opts, cb) ->
   # if ModelClass::constructor.name is 'User'
@@ -17,17 +18,20 @@ module.exports = (data, ModelClass, opts, cb) ->
     item.isNewRecord = no unless opts.isNew
 
     if opts.wrapRelated
-      item.wrapRelated (err) -> done err, item
+      item.wrapRelated (err) ->
+        done err, item
     else
       done err, item
 
+  # console.log data.toArray?, data
+  # console.log data, typeOf(data)
   if data.toArray?
     data.toArray (err, data) =>
       # console.log 'data.toArray', data
       return cb err if err?
       async.map data, wrapper, cb
   else
-    if typeOf('data') is 'array'
+    if typeOf(data) is 'array'
       async.map data, wrapper, cb
     else
       wrapper data, cb
