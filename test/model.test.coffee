@@ -58,7 +58,7 @@ describe 'Model', ->
           post.userId.should.equal user.id
           done()
 
-      it 'should load hasMany relation', (done) ->
+      it 'should load hasMany relation - style #1', (done) ->
         user.addPost getFakePost()
         user.addPost getFakePost()
         user.save (err) ->
@@ -73,3 +73,10 @@ describe 'Model', ->
             # console.log 2, u.posts.length, typeOf u.posts
             should.not.exist err
             done()
+
+      it 'should load hasMany relation - style #2 (the shortest)', (done) ->
+        User.get(user.id).with 'posts', (err, u) ->
+          u.posts.should.be.an('array').with.lengthOf 3
+          # console.log 2, u.posts.length, typeOf u.posts
+          should.not.exist err
+          done()
