@@ -15,7 +15,7 @@ getFakePost = ->
   title: Faker.Lorem.sentence()
   body: Faker.Lorem.paragraphs 3
 
-describe 'Model', ->
+describe 'RethinkDB ORM', ->
   app = null
   User = null
 
@@ -36,8 +36,10 @@ describe 'Model', ->
 
     it 'should save new model to db', (done) ->
       user = new User getFakeUserData()
+      user.isNewRecord.should.be.true
       user.save (err) ->
         should.not.exist err
+        user.isNewRecord.should.be.false
         done()
 
     it 'should has `createdAt` by default', (done) ->
@@ -71,24 +73,40 @@ describe 'Model', ->
           post.userId.should.equal user.id
           done()
 
-      it 'should load hasMany relation - style #1', (done) ->
+  describe 'Model Class', ->
+    user = null
+
+    before (done) ->
+      user = new User getFakeUserData()
+      user.save done
+
+    describe 'get()', ->
+      it 'should get a record', (done) ->
+        User.get user.id, (err, record) ->
+          should.not.exist err
+          should.exist record
+          record.should.has.property 'id', user.id
+          record.isNewRecord.should.be.false
+          done()
+
+    describe 'with()', ->
+      before (done) ->
         user.addPost getFakePost()
         user.addPost getFakePost()
-        user.save (err) ->
+        user.save done
+
+      it 'should get record with relations defined by string (relation name)', (done) ->
+        User.get(user.id).with 'posts', (err, record) ->
           should.not.exist err
+          record.posts.should.be.an('array').with.lengthOf 2
+          done()
 
-          rels =
-            name: 'posts'
-            # with: {name: 'answers', order: 'order'}
+      it 'should get record with relations defined by config object', (done) ->
+        rels =
+          name: 'posts'
+          # with: {name: 'answers', order: 'order'}
 
-          User.get(user.id).with rels, (err, u) ->
-            u.posts.should.be.an('array').with.lengthOf 3
-            # console.log 2, u.posts.length, typeOf u.posts
-            should.not.exist err
-            done()
-
-      it 'should load hasMany relation - style #2 (the shortest)', (done) ->
-        User.get(user.id).with 'posts', (err, u) ->
-          u.posts.should.be.an('array').with.lengthOf 3
+        User.get(user.id).with rels, (err, record) ->
           should.not.exist err
+          record.posts.should.be.an('array').with.lengthOf 2
           done()
