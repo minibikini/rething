@@ -9,6 +9,9 @@ module.exports = (db, app) ->
       lastName: String
       password: String
       username: String
+      roles:
+        type: String
+        default: ['user']
 
     # relations
     @hasMany 'posts'

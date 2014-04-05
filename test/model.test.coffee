@@ -28,8 +28,10 @@ describe 'RethinkDB ORM', ->
       User = app.db.models.User
       done()
 
-  # after (done) ->
+  after (done) ->
+    app.db.close done
   #   r.dbDrop(app.config.rethinkdb.db).run app.db.getConn(), done
+
   describe 'Model Instanse', ->
     user = null
     post = null
@@ -42,19 +44,6 @@ describe 'RethinkDB ORM', ->
         user.isNewRecord.should.be.false
         done()
 
-    it 'should has `createdAt` by default', (done) ->
-      user2 = new User getFakeUserData()
-      user2.save (err) ->
-        should.not.exist err
-        user2.should.have.property 'createdAt'
-        r.db(app.config.rethinkdb.db)
-          .table(User.tableName)
-          .get(user2.id).run app.db.getConn(), (err, data) ->
-            should.not.exist err
-            data.should.have.property 'createdAt'
-            done()
-
-
     it 'should delete a model from db', (done) ->
       user2 = new User getFakeUserData()
       user2.save (err) ->
@@ -62,6 +51,26 @@ describe 'RethinkDB ORM', ->
         user2.remove (err) ->
           should.not.exist err
           done()
+
+    describe 'Defaults', ->
+      user = null
+      before ->
+        user = new User
+
+      it 'should has specified defaults', ->
+        user.roles.should.equal User.schema.roles.default
+
+      it 'should has defaults returned by function'
+      it 'should has `createdAt`', (done) ->
+        user.save (err) ->
+          should.not.exist err
+          user.should.have.property 'createdAt'
+          r.db(app.config.rethinkdb.db)
+            .table(User.tableName)
+            .get(user.id).run app.db.getConn(), (err, data) ->
+              should.not.exist err
+              data.should.have.property 'createdAt'
+              done()
 
     describe 'hasMany', ->
       it 'should create a record for hasMany relation', (done) ->
