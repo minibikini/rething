@@ -3,11 +3,7 @@ typeOf = require('typeof')
 js_beautify = require('js-beautify').js_beautify
 chalk = require 'chalk'
 
-beautify = (str) ->
-  opts =
-    indent_size: 2
-
-  js_beautify str, opts
+beautify = (str) -> js_beautify str, indent_size: 2
 
 
 wrapAsync = require './wrapAsync'
