@@ -143,14 +143,13 @@ module.exports = (db,app) ->
     # @remove: (id, cb = ->) ->
     #   @r().get(id).delete().run db.conn, cb
 
-    constructor: (data = {}) ->
+    constructor: (data = {}, @isNewRecord = yes) ->
       c = @constructor
 
-      if c.timestamp and c.schema.createdAt and c.schema.modifiedAt
-        if @isNewRecord
-          @createdAt = new Date
-        else
-          @modifiedAt = new Date
+      @[key] = value for key, value of data
+
+      if c.timestamp and c.schema.createdAt and @isNewRecord
+        @createdAt = new Date
 
       for name, value of c.schema
         switch typeOf value
@@ -158,12 +157,11 @@ module.exports = (db,app) ->
             @[name] = value.default if value.default?
           when "array" then @[name] = []
 
-      @[key] = value for key, value of data
+
       @wrapRelated()
 
 
     getId: -> @id
-
 
     validateTypes: (cb) ->
       return cb()
@@ -197,6 +195,9 @@ module.exports = (db,app) ->
         @validateTypes (err) =>
           return cb err if err?
 
+          if c.timestamp and c.schema.modifiedAt and !@isNewRecord
+            @modifiedAt = new Date
+
           for key, opts of c.schema
             newObj[key] = @[key] if @[key]?
             # remove empty arrays
@@ -226,10 +227,13 @@ module.exports = (db,app) ->
             newObj.id = @getId() if @getId()?
             c.r().insert(newObj).run db.conn, (err, reply) =>
               return cb err if err?
+
               unless @id?
                 @id = reply?.generated_keys?[0]
-              @saveRelated (err) =>
-                cb err, reply
+
+              @isNewRecord = no
+
+              @saveRelated (err) => cb err, reply
 
           else
             @saveRelated (err) =>

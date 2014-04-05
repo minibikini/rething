@@ -13,9 +13,7 @@ module.exports = (data, ModelClass, opts, cb) ->
 
   wrapper = (item, done) ->
     if item not instanceof ModelClass
-      item = new ModelClass item
-
-    item.isNewRecord = no unless opts.isNew
+      item = new ModelClass item, opts.isNew or no
 
     if opts.wrapRelated
       item.wrapRelated (err) ->
