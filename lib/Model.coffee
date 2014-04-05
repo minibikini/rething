@@ -151,15 +151,15 @@ module.exports = (db,app) ->
       if c.timestamp and c.schema.createdAt and @isNewRecord
         @createdAt = new Date
 
-      for name, value of c.schema
+      @setDefaults()
+      @wrapRelated()
+
+    setDefaults: ->
+      for name, value of @constructor.schema when not @[name]?
         switch typeOf value
           when 'object'
             @[name] = value.default if value.default?
           when "array" then @[name] = []
-
-
-      @wrapRelated()
-
 
     getId: -> @id
 
