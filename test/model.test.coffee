@@ -40,6 +40,19 @@ describe 'Model', ->
         should.not.exist err
         done()
 
+    it 'should has `createdAt` by default', (done) ->
+      user2 = new User getFakeUserData()
+      user2.save (err) ->
+        should.not.exist err
+        user2.should.have.property 'createdAt'
+        r.db(app.config.rethinkdb.db)
+          .table(User.tableName)
+          .get(user2.id).run app.db.getConn(), (err, data) ->
+            should.not.exist err
+            data.should.have.property 'createdAt'
+            done()
+
+
     it 'should delete a model from db', (done) ->
       user2 = new User getFakeUserData()
       user2.save (err) ->
@@ -77,6 +90,5 @@ describe 'Model', ->
       it 'should load hasMany relation - style #2 (the shortest)', (done) ->
         User.get(user.id).with 'posts', (err, u) ->
           u.posts.should.be.an('array').with.lengthOf 3
-          # console.log 2, u.posts.length, typeOf u.posts
           should.not.exist err
           done()
