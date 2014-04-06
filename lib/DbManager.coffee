@@ -70,6 +70,8 @@ module.exports = class DbManager extends EventEmitter
        type: Date
        index: yes
 
+      cls.order ?= 'createdAt'
+
       cls.schema.modifiedAt ?=
        type: Date
        index: yes

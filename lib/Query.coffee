@@ -18,13 +18,10 @@ module.exports = (db,app) ->
 
     toRQL: -> @query
 
-    # wrap: (item) ->
-    #   d = new @model item
-    #   d.isNewRecord = no
-    #   d.wrapRelated()
-    #   d
-
     run: (cb) ->
+      if @collection and @model.order and not @ordered
+        @order @model.order
+
       opts = {}
         # connection: db.getConn()
         # profile: on
@@ -83,7 +80,7 @@ module.exports = (db,app) ->
               if rule.index[0] is '-' then index: r.desc rule.index[1..] else rule
 
           @query = @query.orderBy.apply @query, rules
-          # @ordered = yes
+          @ordered = yes
 
         if cb? then @run cb else @
 
