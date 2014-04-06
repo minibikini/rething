@@ -215,8 +215,8 @@ module.exports = (db,app) ->
 
             # console.log key, typeOf(newObj[key]) if newObj[key]?
 
-            if typeOf(opts) is 'object'
-              return cb "Type not specified for #{key}" unless opts.type?
+            if typeOf(opts) is 'object' and Object.keys(opts).length
+              return cb "Type not specified for `#{key}`" unless opts.type?
 
             # if typeOf(opts) is 'object' (typeOf(opts) is 'object' and opts.type?)
 
