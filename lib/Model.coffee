@@ -57,7 +57,12 @@ module.exports = (db,app) ->
 
           # add getter
           @::["get" + capName] = (cb = ->) ->
-            RelModel.r().getAll(@getId(), index: opts.foreignKey).run db.conn, RelModel.wrapReply cb
+            query = new Query RelModel, RelModel.r().getAll(@getId(), index: opts.foreignKey)
+            query.collection = yes
+            query.order opts.order if opts.order
+            if cb?
+              query.run cb
+            else query
 
           @::["set" + capName] = (models, cb = ->) ->
             models = wrapModel models, RelModel
@@ -83,14 +88,18 @@ module.exports = (db,app) ->
         RelModel = db.models[opts.model]
 
         @::["get" + capName] = (cb = ->) ->
-          RelModel.r().get(@[opts.foreignKey]).run db.conn, RelModel.wrapReply cb
+          query = new Query RelModel, RelModel.r().get(@[opts.foreignKey])
+          query.collection = no
+          if cb?
+            query.run cb
+          else query
 
         @["getBy" + capName] = (id, cb = ->) =>
-            query = new Query @, @r().getAll(id, {index:opts.foreignKey})
-            query.collection = yes
-            if cb?
-              query.run cb
-            else query
+          query = new Query @, @r().getAll(id, {index:opts.foreignKey})
+          query.collection = yes
+          if cb?
+            query.run cb
+          else query
 
     @r: ->
       r.db(db.config.db).table @tableName
