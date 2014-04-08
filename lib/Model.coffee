@@ -167,7 +167,10 @@ module.exports = (db,app) ->
       for name, value of @constructor.schema when not @[name]?
         switch typeOf value
           when 'object'
-            @[name] = value.default if value.default?
+            if value.default?
+              @[name] = if typeOf(value.default) is 'function'
+                value.default()
+              else value.default
           when "array" then @[name] = []
 
     getId: -> @id

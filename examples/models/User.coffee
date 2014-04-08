@@ -19,6 +19,10 @@ module.exports = (db, app) ->
         type: String
         default: ['user']
 
+      something:
+        type: String
+        default: -> 'some string'
+
     # relations
     @hasMany 'posts'
     @hasMany 'comments'
