@@ -150,7 +150,7 @@ module.exports = (db,app) ->
     # @delete: (id, cb = ->) -> @remove id, cb
 
     # @remove: (id, cb = ->) ->
-    #   @r().get(id).delete().run db.conn, cb
+    #   @r().get(id).delete().run db.getConn(), cb
 
     constructor: (data = {}, @isNewRecord = yes) ->
       c = @constructor
@@ -237,7 +237,7 @@ module.exports = (db,app) ->
 
           if @isNewRecord
             newObj.id = @getId() if @getId()?
-            c.r().insert(newObj).run db.conn, (err, reply) =>
+            c.r().insert(newObj).run db.getConn(), (err, reply) =>
               return cb err if err?
 
               unless @id?
@@ -250,7 +250,7 @@ module.exports = (db,app) ->
           else
             @saveRelated (err) =>
               return cb "undefined id" unless @getId()?
-              c.r().get(@getId()).update(newObj).run db.conn, cb
+              c.r().get(@getId()).update(newObj).run db.getConn(), cb
 
     saveRelated: (cb) ->
       c = @constructor
@@ -282,17 +282,19 @@ module.exports = (db,app) ->
       async.each @[rel.name], save, cb
 
     @createIndexes: (cb) ->
-      @r().indexList().run db.conn, (err, existed) =>
+      @r().indexList().run db.getConn(), (err, existed) =>
+        console.log err, existed
+
         indexes = ([name, val] for name, val of @indexes)
         createIndex = ([name, val], cb) =>
           return cb() if name in existed
           if typeOf(val) is 'boolean'
-            @r().indexCreate(name).run db.conn, cb
+            @r().indexCreate(name).run db.getConn(), cb
           else
-            @r().indexCreate(name, val).run db.conn, cb
+            @r().indexCreate(name, val).run db.getConn(), cb
 
         async.each indexes, createIndex, (err) =>
-          @r().indexWait().run db.conn, cb
+          @r().indexWait().run db.getConn(), cb
 
     @relatedQuery: (withRels, query)->
       query = query.map (item) =>
@@ -349,6 +351,6 @@ module.exports = (db,app) ->
 
     remove: (cb = ->) ->
       c = @constructor
-      c.r().get(@id).delete().run db.conn, cb
+      c.r().get(@id).delete().run db.getConn(), cb
 
     'delete': (cb = ->) -> @remove cb
