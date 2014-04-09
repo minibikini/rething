@@ -8,6 +8,8 @@ typeOf = require('typeof')
 module.exports = class DbManager extends EventEmitter
   conn: null
   models: null
+  autoReconnect: on
+  reconnectDelay: 100
 
   constructor: (@app) ->
     @config = @app.config.rethinkdb
@@ -15,13 +17,13 @@ module.exports = class DbManager extends EventEmitter
     @logger = @app.logger
     @Model = require('./Model')(@)
     @models = {}
-    @on "connect", =>
+    @once "connect", =>
       @checkDb()
 
     @on 'db:ready',=>
       @loadModels()
 
-    @on 'db:ensureIndexes:ready', =>
+    @once 'db:ensureIndexes:ready', =>
       @emit 'ready'
 
     @on 'modelsLoaded', =>
@@ -36,17 +38,65 @@ module.exports = class DbManager extends EventEmitter
   connect: (cb = ->) ->
     r.connect @config, (err, @conn) =>
       if err?
-        cb err
-        @emit "error", err
+        # console.log err.message?, err.message.indexOf 'ECONNREFUSED'
         @app.logger.error "connection error" , err
+        cb err
+        @reconnect() if @autoReconnect
       else
-        cb()
-        @emit "connect"
+        r.dbList().run @getConn(), (err, databases) =>
+          if databases
+            @emit "connect"
+            cb()
+            @conn.on 'close', (err) =>
+              @reconnect() if @autoReconnect
+
+            @conn.on 'error', (err) ->
+              console.log 'error', err
+
+            @conn.on 'timeout', (err) ->
+              console.log 'timeout'
+          else
+            console.log err
+            @reconnect() if @autoReconnect
+
     @
 
-  close: (cb = ->) -> @conn.close cb
+  reconnect: ->
+    reconnect = =>
+      @app.logger.info "Reconnecting to the DB..."
+
+      @connect (err) =>
+        fail = =>
+          @reconnectDelay += @reconnectDelay
+          @app.logger.info "Reconnection faild. Retry in #{@reconnectDelay/1000}s."
+
+        if err?
+          fail()
+        else
+          @checkConn (err) =>
+            if err?
+              fail()
+              @reconnect()
+            else
+              @app.logger.info "Reconnected."
+              @reconnectDelay = 100
+
+    setTimeout reconnect, @reconnectDelay
+
+
+  close: (cb = ->) ->
+    @autoReconnect = off
+    @conn.close cb
 
   getConn: -> @conn
+
+  checkConn: (cb) ->
+    r.db(@config.db).tableList().run @getConn(), (err, tables) =>
+      if tables.length
+        r.db(@config.db).table(tables[0]).indexList().run @getConn(), (err, existed) =>
+          cb(err)
+      else
+        cb()
 
   checkDb: ->
     r.dbList().run @getConn(), (err, databases) =>

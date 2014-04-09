@@ -38,7 +38,10 @@ module.exports = (db,app) ->
           queryStr = queryStr.split('\n')[0] if db.config.logQueries is 'short'
           console.log chalk.green("Executed ReQL (#{Date.now()-startTime}ms): \n"), queryStr
 
-        return cb err if err?
+        if err?
+          if err.message? and err.message.indexOf 'No master available'
+            db.reconnect() if db.autoReconnect
+          return cb err
 
         if not @wrap
           cb err, data
