@@ -283,7 +283,6 @@ module.exports = (db,app) ->
 
     @createIndexes: (cb) ->
       @r().indexList().run db.getConn(), (err, existed) =>
-        console.log err, existed
 
         indexes = ([name, val] for name, val of @indexes)
         createIndex = ([name, val], cb) =>
