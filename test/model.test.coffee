@@ -84,12 +84,28 @@ describe 'RethinkDB ORM', ->
           post.userId.should.equal user.id
           done()
 
+    # describe 'Validation', ->
+    #   it 'should validate by schema type', ->
+    #     user = new User
+    #     user.firstName = 123
+    #     user.save (err) ->
+    #       should.exist err, user
+    #       console.log err
+
+
   describe 'Model Class', ->
     user = null
 
     before (done) ->
       user = new User getFakeUserData()
       user.save done
+
+    describe 'Defaults', ->
+      it 'should has defaults', ->
+        User.should.have.property 'tableName', 'users'
+        User.should.have.property 'timestamp', on
+        User.should.have.property 'order', 'createdAt'
+        User.should.have.property 'primaryKey', 'id'
 
     describe 'get()', ->
       it 'should get a record', (done) ->
@@ -100,7 +116,7 @@ describe 'RethinkDB ORM', ->
           record.isNewRecord.should.be.false
           done()
 
-    describe 'with()', ->
+    describe 'Eager Loading - with()', ->
       before (done) ->
         user.addPost getFakePost()
         user.addPost getFakePost()
