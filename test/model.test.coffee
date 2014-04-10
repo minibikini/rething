@@ -44,6 +44,18 @@ describe 'RethinkDB ORM', ->
         user.isNewRecord.should.be.false
         done()
 
+    it 'should get a record from db', (done) ->
+      user = new User getFakeUserData()
+      user.save (err) ->
+        should.not.exist err
+        User.get user.id, (err, record) ->
+          should.not.exist err
+          should.exist record
+          record.should.have.property 'id', user.id
+
+          done()
+
+
     it 'should delete a model from db', (done) ->
       user2 = new User getFakeUserData()
       user2.save (err) ->
@@ -85,12 +97,14 @@ describe 'RethinkDB ORM', ->
           done()
 
     # describe 'Validation', ->
-    #   it 'should validate by schema type', ->
+    #   it 'should validate by schema type', (done) ->
     #     user = new User
     #     user.firstName = 123
     #     user.save (err) ->
-    #       should.exist err, user
-    #       console.log err
+    #       # should.exist err, user
+    #       console.log err, user
+    #       done()
+
 
 
   describe 'Model Class', ->
