@@ -42,30 +42,47 @@ module.exports = (app) ->
 
     @all: (cb) ->
       that = @
-      @r().run app.dbConn, @wrapCursor cb
+      db.pool.acquire (error, conn) =>
+        @r().run conn, @wrapCursor (err, reply) =>
+          db.pool.release conn
+          cb err, reply
 
 
     @get: (id, cb) -> @findById id, cb
 
     @findById: (id, cb) ->
-      @r().get(id).run app.dbConn, @wrapReply cb
+      db.pool.acquire (error, conn) =>
+        @r().get(id).run conn, @wrapReply (err, reply) =>
+          db.pool.release conn
+          cb err, reply
 
     @getByIndex: (query, index, cb) ->
-      @r().getAll(query, {index: index}).run app.dbConn, @wrapCursor cb
-
+      db.pool.acquire (error, conn) =>
+        @r().getAll(query, {index: index}).run conn, (err, reply) =>
+          db.pool.release conn
+          cb err, reply
     @getOneByIndex: (query, index, cb) ->
-      @r().getAll(query, {index: index}).run app.dbConn, @wrapCursor (err, docs) ->
-        return cb err if err?
-        cb err, docs[0] or null
+      db.pool.acquire (error, conn) =>
+        @r().getAll(query, {index: index}).run conn, @wrapCursor (err, docs) ->
+          db.pool.release conn
+          return cb err if err?
+          cb err, docs[0] or null
 
     @findOne: (query, cb) ->
       that = @
-      @r().filter(query).run app.dbConn, (err, cur) ->
-        return cb err if err?
-        if cur.hasNext()
-          cur.next that.wrapReply cb
-        else
-          cb 'not found'
+      db.pool.acquire (error, conn) =>
+        @r().filter(query).run conn, (err, cur) ->
+          if err?
+            db.pool.release conn
+            return cb err
+
+          if cur.hasNext()
+            cur.next that.wrapReply (err, reply) ->
+              db.pool.release conn
+              cb err, reply
+          else
+            db.pool.release conn
+            cb 'not found'
 
     @filter: (filter, cb) ->
       filter
@@ -73,18 +90,24 @@ module.exports = (app) ->
     @delete: (id, cb = ->) -> @remove id, cb
 
     @remove: (id, cb = ->) ->
-      @r().get(id).delete().run app.dbConn, cb
+      db.pool.acquire (error, conn) =>
+        @r().get(id).delete().run conn, (err, reply) ->
+          db.pool.release conn
+          cb err, reply
 
     @ensureIndex: (cb = ->) ->
-      @r().indexList().run app.dbConn, (err, @indexList) =>
-        needIndex = (key, opts) =>
-          typeOf(opts) is 'object' and opts.index and key not in @indexList
+      db.pool.acquire (error, conn) =>
+        @r().indexList().run conn, (err, @indexList) =>
+          needIndex = (key, opts) =>
+            typeOf(opts) is 'object' and opts.index and key not in @indexList
 
-        newIndexes = (key for key, opts of @schema when needIndex key, opts)
+          newIndexes = (key for key, opts of @schema when needIndex key, opts)
 
-        createIndex = (key, cb) => @r().indexCreate(key).run app.dbConn, cb
+          createIndex = (key, cb) => @r().indexCreate(key).run conn, cb
 
-        async.each newIndexes, createIndex, cb
+          async.each newIndexes, createIndex, (err, data) ->
+            db.pool.release conn
+            cb err, data
 
 
     constructor: (data = {}) ->
@@ -115,14 +138,18 @@ module.exports = (app) ->
 
       if @isNewRecord
         newObj.id = @getId() if @getId()?
-        c.r().insert(newObj).run app.dbConn, (err, reply) =>
-          return cb err if err?
-          unless @id?
-            @id = reply?.generated_keys?[0]
-          cb err, reply
-
+        db.pool.acquire (error, conn) =>
+          c.r().insert(newObj).run conn, (err, reply) =>
+            db.pool.release conn
+            return cb err if err?
+            unless @id?
+              @id = reply?.generated_keys?[0]
+            cb err, reply
       else
-        c.r().get(@getId()).update(newObj).run app.dbConn, cb
+        db.pool.acquire (error, conn) =>
+          c.r().get(@getId()).update(newObj).run conn, (err, reply) ->
+            db.pool.release conn
+            cb err, reply
 
 
     populate: (relName, cb) ->

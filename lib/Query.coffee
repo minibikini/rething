@@ -31,26 +31,31 @@ module.exports = (db,app) ->
         startTime = Date.now()
         queryStr = @query.toString()
 
-      @query.run db.getConn(), opts, (err, data) =>
-        if db.config.logQueries
-          console.log chalk.gray "=========================================="
-          queryStr =  beautify queryStr
-          queryStr = queryStr.split('\n')[0] if db.config.logQueries is 'short'
-          console.log chalk.green("Executed ReQL (#{Date.now()-startTime}ms): \n"), queryStr
+      db.pool.acquire (err, conn) =>
+        console.error err if err?
+        @query.run conn, opts, (err, data) =>
+          if db.config.logQueries
+            console.log chalk.gray "=========================================="
+            queryStr =  beautify queryStr
+            queryStr = queryStr.split('\n')[0] if db.config.logQueries is 'short'
+            console.log chalk.green("Executed ReQL (#{Date.now()-startTime}ms): \n"), queryStr
 
-        if err?
-          if err.message? and err.message.indexOf 'No master available'
-            db.reconnect() if db.autoReconnect
-          return cb err
+          if err?
+            db.pool.release conn
+            if err.message? and err.message.indexOf 'No master available'
+              db.reconnect() if db.autoReconnect
+            return cb err
 
-        if not @wrap
-          cb err, data
-        else
-          wrapAsync data, @model, {isNew: no, wrapRelated: yes}, (err, data) =>
-            return cb err if err?
-            if not @collection and typeOf(data) is 'array'
-              data = if data.length then data[0] else null
+          if not @wrap
+            db.pool.release conn
             cb err, data
+          else
+            wrapAsync data, @model, {isNew: no, wrapRelated: yes}, (err, data) =>
+              db.pool.release conn
+              return cb err if err?
+              if not @collection and typeOf(data) is 'array'
+                data = if data.length then data[0] else null
+              cb err, data
 
     with: (rels, cb) ->
       rels = rels.trim().split(' ') if typeOf(rels) is 'string'
@@ -131,9 +136,10 @@ module.exports = (db,app) ->
 
       update = {}
       update[field] = r.row(field).add(num)
-
-      @query
-        .update(update, return_vals: yes)
-        .run db.getConn(), (err, reply) =>
-          return cb err if err?
-          cb()
+      db.pool.acquire (error, conn) =>
+        @query
+          .update(update, return_vals: yes)
+          .run conn, (err, reply) =>
+            db.pool.release conn
+            return cb err if err?
+            cb()

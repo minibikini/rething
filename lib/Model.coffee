@@ -237,20 +237,25 @@ module.exports = (db,app) ->
 
           if @isNewRecord
             newObj.id = @getId() if @getId()?
-            c.r().insert(newObj).run db.getConn(), (err, reply) =>
-              return cb err if err?
+            db.pool.acquire (err, conn) =>
+              c.r().insert(newObj).run conn, (err, reply) =>
+                db.pool.release conn
+                return cb err if err?
 
-              unless @id?
-                @id = reply?.generated_keys?[0]
+                unless @id?
+                  @id = reply?.generated_keys?[0]
 
-              @isNewRecord = no
+                @isNewRecord = no
 
-              @saveRelated (err) => cb err, reply
+                @saveRelated (err) => cb err, reply
 
           else
             @saveRelated (err) =>
               return cb "undefined id" unless @getId()?
-              c.r().get(@getId()).update(newObj).run db.getConn(), cb
+              db.pool.acquire (err, conn) =>
+                c.r().get(@getId()).update(newObj).run conn, (err) ->
+                  db.pool.release conn
+                  cb err
 
     saveRelated: (cb) ->
       c = @constructor
@@ -282,18 +287,20 @@ module.exports = (db,app) ->
       async.each @[rel.name], save, cb
 
     @createIndexes: (cb) ->
-      @r().indexList().run db.getConn(), (err, existed) =>
+      db.pool.acquire (err, conn) =>
+        @r().indexList().run conn, (err, existed) =>
+          indexes = ([name, val] for name, val of @indexes)
+          createIndex = ([name, val], cb) =>
+            return cb() if name in existed
+            if typeOf(val) is 'boolean'
+              @r().indexCreate(name).run conn, cb
+            else
+              @r().indexCreate(name, val).run conn, cb
 
-        indexes = ([name, val] for name, val of @indexes)
-        createIndex = ([name, val], cb) =>
-          return cb() if name in existed
-          if typeOf(val) is 'boolean'
-            @r().indexCreate(name).run db.getConn(), cb
-          else
-            @r().indexCreate(name, val).run db.getConn(), cb
-
-        async.each indexes, createIndex, (err) =>
-          @r().indexWait().run db.getConn(), cb
+          async.each indexes, createIndex, (err) =>
+            @r().indexWait().run conn, (err) ->
+              db.pool.release conn
+              cb err
 
     @relatedQuery: (withRels, query)->
       query = query.map (item) =>
@@ -349,7 +356,10 @@ module.exports = (db,app) ->
       async.parallel wrapRelations, cb
 
     remove: (cb = ->) ->
-      c = @constructor
-      c.r().get(@id).delete().run db.getConn(), cb
+      db.pool.acquire (err, conn) =>
+        c = @constructor
+        c.r().get(@id).delete().run conn, (err, reply) ->
+          db.pool.release conn
+          cb err, reply
 
     'delete': (cb = ->) -> @remove cb
