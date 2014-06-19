@@ -2,7 +2,7 @@ should = require('chai').should()
 AppSpine = require 'appspine'
 r = require 'rethinkdb'
 Rething = require '../'
-Faker = require 'Faker'
+Faker = require 'faker'
 typeOf = require 'typeof'
 
 getFakeUserData = ->
