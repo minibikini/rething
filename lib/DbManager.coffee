@@ -38,7 +38,7 @@ module.exports = class DbManager extends EventEmitter
     @rr = r
     @r = r.db(@config.db)
 
-    @pool = Pool(@config)
+    @pool = Pool(@config, 30)
 
   connect: (cb = ->) ->
     @pool.acquire (error, conn) =>
