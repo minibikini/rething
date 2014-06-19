@@ -1,6 +1,6 @@
 {
   "name": "rething",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "rething =======",
   "main": "index.js",
   "scripts": {
@@ -17,20 +17,20 @@
   },
   "homepage": "https://github.com/minibikini/rething",
   "dependencies": {
-    "glob": "^3.2.9",
+    "glob": "^4.0.2",
     "rethinkdb": "^1.13.0-0",
     "typeof": "^1.0.0",
     "inflection": "^1.3.5",
-    "async": "^0.2.10",
+    "async": "^0.9.0",
     "chalk": "^0.4.0",
-    "js-beautify": "^1.4.2"
+    "js-beautify": "^1.5.1"
   },
   "devDependencies": {
     "gulp-mocha": "^0.4.1",
-    "gulp": "^3.6.0",
-    "appspine": "0.0.5",
+    "gulp": "^3.8.1",
+    "appspine": "^0.0.9",
     "faker": "^1.0.0",
-    "gulp-util": "^2.2.14",
+    "gulp-util": "^2.2.17",
     "chai": "^1.9.1"
   }
 }
