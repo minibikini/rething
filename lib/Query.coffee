@@ -127,7 +127,9 @@ module.exports = (db,app) ->
       if cb? then @run cb else @
 
 
-    filter: (query) ->
+    filter: (predicate, cb) ->
+      @query = @query.filter(predicate)
+      if cb? then @run cb else @
 
     increment: (field, num, cb) ->
       if arguments.length is 2
