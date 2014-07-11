@@ -1,6 +1,6 @@
 {
   "name": "rething",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "rething =======",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "glob": "^4.0.2",
     "inflection": "^1.3.5",
     "js-beautify": "^1.5.1",
-    "rethinkdb": "^1.13.0-1",
+    "rethinkdb": "^1.13.0-2",
     "rethinkdb-pool": "git://github.com/minibikini/rethinkdb-pool",
     "typeof": "^1.0.0"
   },
