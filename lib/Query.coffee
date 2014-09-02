@@ -1,10 +1,8 @@
-r = require 'rethinkdb'
 typeOf = require('typeof')
 js_beautify = require('js-beautify').js_beautify
 chalk = require 'chalk'
 
 beautify = (str) -> js_beautify str, indent_size: 2
-
 
 wrapAsync = require './wrapAsync'
 
@@ -31,31 +29,23 @@ module.exports = (db,app) ->
         startTime = Date.now()
         queryStr = @query.toString()
 
-      db.pool.acquire (err, conn) =>
-        console.error err if err?
-        @query.run conn, opts, (err, data) =>
-          if db.config.logQueries
-            console.log chalk.gray "=========================================="
-            queryStr =  beautify queryStr
-            queryStr = queryStr.split('\n')[0] if db.config.logQueries is 'short'
-            console.log chalk.green("Executed ReQL (#{Date.now()-startTime}ms): \n"), queryStr
+      db.pool.run @query, (err, data) =>
+        if db.config.logQueries
+          console.log chalk.gray "=========================================="
+          queryStr =  beautify queryStr
+          queryStr = queryStr.split('\n')[0] if db.config.logQueries is 'short'
+          console.log chalk.green("Executed ReQL (#{Date.now()-startTime}ms): \n"), queryStr
 
-          if err?
-            db.pool.release conn
-            if err.message? and err.message.indexOf 'No master available'
-              db.reconnect() if db.autoReconnect
-            return cb err
+        return cb err if err?
 
-          if not @wrap
-            db.pool.release conn
+        if not @wrap
+          cb err, data
+        else
+          wrapAsync data, @model, {isNew: no, wrapRelated: yes}, (err, data) =>
+            return cb err if err?
+            if not @collection and typeOf(data) is 'array'
+              data = if data.length then data[0] else null
             cb err, data
-          else
-            wrapAsync data, @model, {isNew: no, wrapRelated: yes}, (err, data) =>
-              db.pool.release conn
-              return cb err if err?
-              if not @collection and typeOf(data) is 'array'
-                data = if data.length then data[0] else null
-              cb err, data
 
     with: (rels, cb) ->
       rels = rels.trim().split(' ') if typeOf(rels) is 'string'
@@ -83,9 +73,9 @@ module.exports = (db,app) ->
 
           rules = for rule in rules
             if typeOf(rule) is 'string'
-              if rule[0] is '-' then r.desc rule[1..] else rule
+              if rule[0] is '-' then db.pool.r.desc rule[1..] else rule
             else if typeOf(rule) is 'object'
-              if rule.index[0] is '-' then index: r.desc rule.index[1..] else rule
+              if rule.index[0] is '-' then index: db.pool.r.desc rule.index[1..] else rule
 
           @query = @query.orderBy.apply @query, rules
           @ordered = yes
@@ -137,11 +127,5 @@ module.exports = (db,app) ->
         num = 1
 
       update = {}
-      update[field] = r.row(field).add(num)
-      db.pool.acquire (error, conn) =>
-        @query
-          .update(update, return_vals: yes)
-          .run conn, (err, reply) =>
-            db.pool.release conn
-            return cb err if err?
-            cb()
+      update[field] = db.pool.r.row(field).add(num)
+      db.pool.run @query.update(update, return_vals: yes), cb

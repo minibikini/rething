@@ -1,4 +1,3 @@
-r = require 'rethinkdb'
 EventEmitter = require('events').EventEmitter
 typeOf = require('typeof')
 inflection = require "inflection"
@@ -102,7 +101,7 @@ module.exports = (db,app) ->
           else query
 
     @r: ->
-      r.db(db.config.db).table @tableName
+      db.pool.r.db(db.config.db).table @tableName
 
     @wrap: (data, cb) -> wrapAsync data, @, {isNew: no, wrapRelated: yes}, cb
 
@@ -237,25 +236,20 @@ module.exports = (db,app) ->
 
           if @isNewRecord
             newObj.id = @getId() if @getId()?
-            db.pool.acquire (err, conn) =>
-              c.r().insert(newObj).run conn, (err, reply) =>
-                db.pool.release conn
-                return cb err if err?
+            db.pool.run c.r().insert(newObj), (err, reply) =>
+              return cb err if err?
 
-                unless @id?
-                  @id = reply?.generated_keys?[0]
+              unless @id?
+                @id = reply?.generated_keys?[0]
 
-                @isNewRecord = no
+              @isNewRecord = no
 
-                @saveRelated (err) => cb err, reply
+              @saveRelated (err) => cb err, reply
 
           else
             @saveRelated (err) =>
               return cb "undefined id" unless @getId()?
-              db.pool.acquire (err, conn) =>
-                c.r().get(@getId()).update(newObj).run conn, (err) ->
-                  db.pool.release conn
-                  cb err
+              db.pool.run c.r().get(@getId()).update(newObj), cb
 
     saveRelated: (cb) ->
       c = @constructor
@@ -287,20 +281,17 @@ module.exports = (db,app) ->
       async.each @[rel.name], save, cb
 
     @createIndexes: (cb) ->
-      db.pool.acquire (err, conn) =>
-        @r().indexList().run conn, (err, existed) =>
-          indexes = ([name, val] for name, val of @indexes)
-          createIndex = ([name, val], cb) =>
-            return cb() if name in existed
-            if typeOf(val) is 'boolean'
-              @r().indexCreate(name).run conn, cb
-            else
-              @r().indexCreate(name, val).run conn, cb
+      db.pool.run @r().indexList(), (err, existed) =>
+        indexes = ([name, val] for name, val of @indexes)
+        createIndex = ([name, val], cb) =>
+          return cb() if name in existed
+          if typeOf(val) is 'boolean'
+            db.pool.run @r().indexCreate(name), cb
+          else
+            db.pool.run @r().indexCreate(name, val), cb
 
-          async.each indexes, createIndex, (err) =>
-            @r().indexWait().run conn, (err) ->
-              db.pool.release conn
-              cb err
+        async.each indexes, createIndex, (err) =>
+          db.pool.run @r().indexWait(), cb
 
     @relatedQuery: (withRels, query)->
       query = query.map (item) =>
@@ -331,7 +322,7 @@ module.exports = (db,app) ->
         for name, rel of @relations.belongsTo
           for withRel in withRels when withRel.name is name
             tableName = db.models[rel.model].tableName
-            obj[name] =  r.db(db.config.db).table(tableName).get(item(rel.foreignKey))
+            obj[name] = db.pool.r.db(db.config.db).table(tableName).get(item(rel.foreignKey))
 
         item.merge obj
       query
@@ -356,10 +347,7 @@ module.exports = (db,app) ->
       async.parallel wrapRelations, cb
 
     remove: (cb = ->) ->
-      db.pool.acquire (err, conn) =>
-        c = @constructor
-        c.r().get(@id).delete().run conn, (err, reply) ->
-          db.pool.release conn
-          cb err, reply
+      c = @constructor
+      db.pool.run c.r().get(@id).delete(), cb
 
     'delete': (cb = ->) -> @remove cb

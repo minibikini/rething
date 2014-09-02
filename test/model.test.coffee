@@ -1,6 +1,5 @@
 should = require('chai').should()
 AppSpine = require 'appspine'
-r = require 'rethinkdb'
 Rething = require '../'
 Faker = require 'faker'
 typeOf = require 'typeof'
@@ -25,6 +24,7 @@ describe 'RethinkDB ORM', ->
     app.db = new Rething app
     app.db.connect()
     app.db.once 'ready', ->
+
       User = app.db.models.User
       done()
 
@@ -79,14 +79,16 @@ describe 'RethinkDB ORM', ->
         user.save (err) ->
           should.not.exist err
           user.should.have.property 'createdAt'
-          app.db.pool.acquire (error, conn) ->
-            r.db(app.config.rethinkdb.db)
-              .table(User.tableName)
-              .get(user.id).run conn, (err, data) ->
-                app.db.pool.release conn
-                should.not.exist err
-                data.should.have.property 'createdAt'
-                done()
+
+          query = app.db.pool.r
+            .db app.config.rethinkdb.db
+            .table User.tableName
+            .get user.id
+
+          app.db.pool.run query, (err, data) ->
+            should.not.exist err
+            data.should.have.property 'createdAt'
+            done()
 
     describe 'hasMany', ->
       it 'should create a record for hasMany relation', (done) ->

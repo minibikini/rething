@@ -1,6 +1,5 @@
 typeOf = require 'typeof'
 async = require 'async'
-inspect = require('util').inspect
 
 module.exports = (data, ModelClass, opts, cb) ->
   # if ModelClass::constructor.name is 'User'
