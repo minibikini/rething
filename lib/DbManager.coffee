@@ -34,9 +34,13 @@ module.exports = class DbManager extends EventEmitter
         @emit 'ready'
 
     @pool = Pool(@config)
+    @r = @pool.r
+
+  run: (query, cb = ->) ->
+    @pool.run query, cb
 
   connect: (cb = ->) ->
-    @pool.run @pool.r.dbList(), (err, databases) =>
+    @run @r.dbList(), (err, databases) =>
       if databases
         @emit "connect"
         cb()
@@ -48,11 +52,11 @@ module.exports = class DbManager extends EventEmitter
       @pool.destroyAllNow cb
 
   checkDb: ->
-    @pool.run @pool.r.dbList(), (err, databases) =>
+    @run @r.dbList(), (err, databases) =>
       if @config.db in databases
         @emit "db:ready"
       else
-        @pool.run @pool.r.dbCreate(@config.db), (err) =>
+        @run @r.dbCreate(@config.db), (err) =>
           return @app.logger.error err if err?
           @emit "db:ready"
 
@@ -79,13 +83,13 @@ module.exports = class DbManager extends EventEmitter
     cls.indexes ?= {}
 
     if cls.tableName not in @tableList
-      query = @pool.r.tableCreate(cls.tableName, primaryKey: cls.primaryKey)
-      @pool.run query, cb
+      query = @r.tableCreate(cls.tableName, primaryKey: cls.primaryKey)
+      @run query, cb
     else
       cb()
 
   loadModels: ->
-    @pool.run @pool.r.tableList(), (err, @tableList) =>
+    @run @r.tableList(), (err, @tableList) =>
       glob "#{@config.modelsFolder}/*.coffee", (err, files) =>
         async.each files, @loadModel, (err) =>
           process.nextTick => @emit 'modelsLoaded'

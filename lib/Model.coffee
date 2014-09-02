@@ -101,7 +101,7 @@ module.exports = (db,app) ->
           else query
 
     @r: ->
-      db.pool.r.db(db.config.db).table @tableName
+      db.r.db(db.config.db).table @tableName
 
     @wrap: (data, cb) -> wrapAsync data, @, {isNew: no, wrapRelated: yes}, cb
 
@@ -236,7 +236,7 @@ module.exports = (db,app) ->
 
           if @isNewRecord
             newObj.id = @getId() if @getId()?
-            db.pool.run c.r().insert(newObj), (err, reply) =>
+            db.run c.r().insert(newObj), (err, reply) =>
               return cb err if err?
 
               unless @id?
@@ -249,7 +249,7 @@ module.exports = (db,app) ->
           else
             @saveRelated (err) =>
               return cb "undefined id" unless @getId()?
-              db.pool.run c.r().get(@getId()).update(newObj), cb
+              db.run c.r().get(@getId()).update(newObj), cb
 
     saveRelated: (cb) ->
       c = @constructor
@@ -281,17 +281,17 @@ module.exports = (db,app) ->
       async.each @[rel.name], save, cb
 
     @createIndexes: (cb) ->
-      db.pool.run @r().indexList(), (err, existed) =>
+      db.run @r().indexList(), (err, existed) =>
         indexes = ([name, val] for name, val of @indexes)
         createIndex = ([name, val], cb) =>
           return cb() if name in existed
           if typeOf(val) is 'boolean'
-            db.pool.run @r().indexCreate(name), cb
+            db.run @r().indexCreate(name), cb
           else
-            db.pool.run @r().indexCreate(name, val), cb
+            db.run @r().indexCreate(name, val), cb
 
         async.each indexes, createIndex, (err) =>
-          db.pool.run @r().indexWait(), cb
+          db.run @r().indexWait(), cb
 
     @relatedQuery: (withRels, query)->
       query = query.map (item) =>
@@ -322,7 +322,7 @@ module.exports = (db,app) ->
         for name, rel of @relations.belongsTo
           for withRel in withRels when withRel.name is name
             tableName = db.models[rel.model].tableName
-            obj[name] = db.pool.r.db(db.config.db).table(tableName).get(item(rel.foreignKey))
+            obj[name] = db.r.db(db.config.db).table(tableName).get(item(rel.foreignKey))
 
         item.merge obj
       query
@@ -348,6 +348,6 @@ module.exports = (db,app) ->
 
     remove: (cb = ->) ->
       c = @constructor
-      db.pool.run c.r().get(@id).delete(), cb
+      db.run c.r().get(@id).delete(), cb
 
     'delete': (cb = ->) -> @remove cb

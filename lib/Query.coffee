@@ -128,4 +128,4 @@ module.exports = (db,app) ->
 
       update = {}
       update[field] = db.pool.r.row(field).add(num)
-      db.pool.run @query.update(update, return_vals: yes), cb
+      db.pool.run @query.update(update, returnChanges: yes), cb
