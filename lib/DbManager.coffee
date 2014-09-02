@@ -1,11 +1,12 @@
-glob = require("glob")
+glob = require "glob"
 EventEmitter = require("events").EventEmitter
 inflection = require "inflection"
 async = require "async"
-typeOf = require('typeof')
-Pool = require('rethinkdb-pool')
+typeOf = require 'typeof'
+Pool = require 'rethinkdb-pool'
 
 module.exports = class DbManager extends EventEmitter
+  @Pool: Pool
   conn: null
   models: null
   reconnectDelay: 100
@@ -43,8 +44,8 @@ module.exports = class DbManager extends EventEmitter
     @
 
   close: (cb = ->) ->
-    # @conn.close cb
-    cb()
+    @pool.drain =>
+      @pool.destroyAllNow cb
 
   checkDb: ->
     @pool.run @pool.r.dbList(), (err, databases) =>
