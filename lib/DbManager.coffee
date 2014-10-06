@@ -7,6 +7,7 @@ Pool = require 'rethinkdb-pool'
 
 module.exports = class DbManager extends EventEmitter
   @Pool: Pool
+  Pool: Pool
   conn: null
   models: null
   reconnectDelay: 100
