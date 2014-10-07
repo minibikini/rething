@@ -360,3 +360,7 @@ module.exports = (db,app) ->
         newObj[key] = @[key] if @[key]?
 
       newObj
+
+    @index: (name, fn) ->
+      @indexes ?= {}
+      @indexes[name] = fn or true
