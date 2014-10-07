@@ -351,3 +351,12 @@ module.exports = (db,app) ->
       db.run c.r().get(@id).delete(), cb
 
     'delete': (cb = ->) -> @remove cb
+
+    toObject: ->
+      c = @constructor
+      newObj = {}
+
+      for key, opts of c.schema
+        newObj[key] = @[key] if @[key]?
+
+      newObj
