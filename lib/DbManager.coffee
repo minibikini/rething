@@ -42,6 +42,13 @@ module.exports = class DbManager extends EventEmitter
   run: (query, cb = ->) ->
     @pool.run query, cb
 
+  exec: (query) ->
+    new Promise (resolve, reject) ->
+      query.run (err, result) ->
+        if err then reject(err)
+        else resolve result
+
+
   connect: (cb = ->) ->
     @run @r.dbList(), (err, databases) =>
       if databases
