@@ -4,10 +4,12 @@ inflection = require "inflection"
 async = require "async"
 typeOf = require 'typeof'
 Pool = require 'rethinkdb-pool'
+Promise = require 'bluebird'
 
 module.exports = class DbManager extends EventEmitter
   @Pool: Pool
   Pool: Pool
+  Promise: Promise
   conn: null
   models: null
   reconnectDelay: 100
