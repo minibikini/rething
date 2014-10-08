@@ -2,6 +2,7 @@ EventEmitter = require('events').EventEmitter
 typeOf = require('typeof')
 inflection = require "inflection"
 async = require 'async'
+{ValidationError, ModelError} = require './errors'
 
 isArray = (value) ->
   typeOf(value) is 'array' or (typeOf(value) is 'object' and typeOf(value.type) is 'array')
