@@ -258,23 +258,28 @@ module.exports = (db,app) ->
       promise
 
     saveRelated: (cb) ->
-      c = @constructor
-      return cb() unless c.relations?
-      relations = []
+      promise = new Promise (resolve, reject) =>
+        c = @constructor
+        return resolve() unless c.relations?
+        relations = []
 
-      for relName, rels of c.relations
-        for name, opts of rels
-          opts.name = name
-          opts.type = relName
-          relations.push opts
+        for relName, rels of c.relations
+          for name, opts of rels
+            opts.name = name
+            opts.type = relName
+            relations.push opts
 
-      saveRel = (rel, cb) =>
-        switch rel.type
-          when 'hasMany' then @saveHasMany rel, cb
-          else
-            cb()
+        saveRel = (rel, done) =>
+          switch rel.type
+            when 'hasMany' then @saveHasMany rel, done
+            else done()
 
-      async.each relations, saveRel, cb
+        async.each relations, saveRel, (err) ->
+          if err then reject err else resolve()
+
+      promise.nodeify cb if cb?
+      promise
+
 
     saveHasMany: (rel, cb) ->
       return cb() unless @[rel.name]?
