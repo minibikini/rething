@@ -26,6 +26,7 @@ wrapAsync = require './wrapAsync'
 
 module.exports = (db,app) ->
   Query = require('./Query')(db,app)
+  {Promise} = db
 
   class Model extends EventEmitter
     isNewRecord: yes
@@ -176,23 +177,25 @@ module.exports = (db,app) ->
     getId: -> @id
 
     validateTypes: (cb) ->
-      return cb()
-      # TODO
-      c = @constructor
-      c.schema
+      promise = new Promise (resolve, reject) =>
+        return resolve()
+        # TODO
+        c = @constructor
+        c.schema
 
-      for key, opts of c.schema
-        type = if typeOf(opts) is 'object' and opts.type?
-          opts.type
-        else
-          opts
+        for key, opts of c.schema
+          type = if typeOf(opts) is 'object' and opts.type?
+            opts.type
+          else
+            opts
 
-        type = type() if typeOf(type) is 'function'
+          type = type() if typeOf(type) is 'function'
 
-        if typeOf(@[key]) isnt typeOf(type)
-          return cb "#{key} has to be type of `#{typeOf(type)}`"
+          if typeOf(@[key]) isnt typeOf(type)
+            return reject new ValidationError "#{key} has to be type of `#{typeOf(type)}`"
 
-      cb()
+      promise.nodeify cb if cb?
+      promise
 
     beforeSave: (cb) -> cb()
 
