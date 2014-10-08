@@ -199,17 +199,16 @@ module.exports = (db,app) ->
 
     beforeSave: (cb) -> cb()
 
-    save: (cb = ->) ->
-      # TODO: defaults, required
-      @beforeSave (err) =>
-        return cb err if err?
+    save: (cb) ->
+      beforeSave = Promise.promisify @beforeSave, @
+
+      promise = beforeSave().then =>
+        # TODO: defaults, required
         c = @constructor
         newObj = {}
         # newObj[key] = @[key] for key, value of @
 
-        @validateTypes (err) =>
-          return cb err if err?
-
+        @validateTypes().then =>
           if c.timestamp and c.schema.modifiedAt and !@isNewRecord
             @modifiedAt = new Date
 
@@ -222,12 +221,12 @@ module.exports = (db,app) ->
             # console.log key, typeOf(newObj[key]) if newObj[key]?
 
             if typeOf(opts) is 'object' and Object.keys(opts).length
-              return cb "Type not specified for `#{key}`" unless opts.type?
+              return reject new ValidationError "Type not specified for `#{key}`" unless opts.type?
 
             # if typeOf(opts) is 'object' (typeOf(opts) is 'object' and opts.type?)
 
               if opts.required and not newObj[key]?
-                return cb "#{key} field is required"
+                return reject new ValidationError "#{key} field is required"
 
               switch opts.type
                 when String
@@ -240,20 +239,23 @@ module.exports = (db,app) ->
 
           if @isNewRecord
             newObj.id = @getId() if @getId()?
-            db.run c.r().insert(newObj), (err, reply) =>
-              return cb err if err?
-
+            db.run(c.r().insert(newObj)).then (reply) =>
               unless @id?
                 @id = reply?.generated_keys?[0]
 
               @isNewRecord = no
 
-              @saveRelated (err) => cb err, reply
+              @saveRelated().then => @
 
           else
-            @saveRelated (err) =>
-              return cb "undefined id" unless @getId()?
-              db.run c.r().get(@getId()).update(newObj), cb
+            @saveRelated().then =>
+              if @getId()?
+                db.run(c.r().get(@getId()).update(newObj)).then => @
+              else
+                reject new ModelError "undefined id"
+
+      promise.nodeify cb if cb?
+      promise
 
     saveRelated: (cb) ->
       c = @constructor
