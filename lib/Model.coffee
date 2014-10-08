@@ -138,7 +138,7 @@ module.exports = (db,app) ->
       if cb? then query.run cb else query
 
     @getOneBy: (idx, val, cb) ->
-      query = new Query @, @r().getAll(val, {index:idx})
+      query = new Query @, @r().getAll val, index: idx
       query.collection = no
       # query.order()
       if cb? then query.run cb else query

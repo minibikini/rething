@@ -1,6 +1,7 @@
 typeOf = require('typeof')
 js_beautify = require('js-beautify').js_beautify
 chalk = require 'chalk'
+Promise = require 'bluebird'
 
 beautify = (str) -> js_beautify str, indent_size: 2
 
@@ -129,3 +130,11 @@ module.exports = (db,app) ->
       update = {}
       update[field] = db.pool.r.row(field).add(num)
       db.pool.run @query.update(update, returnChanges: yes), cb
+
+    then: (onFulfilled, onRejected) ->
+      promise = new Promise (resolve, reject) =>
+        @run (err, res) =>
+          return reject err if err
+          resolve res
+      # promise.bind @
+      promise.then onFulfilled, onRejected
