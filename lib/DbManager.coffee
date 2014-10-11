@@ -10,6 +10,7 @@ module.exports = class DbManager extends EventEmitter
   @Pool: Pool
   Pool: Pool
   Promise: Promise
+  @Promise: Promise
   conn: null
   models: null
   reconnectDelay: 100
