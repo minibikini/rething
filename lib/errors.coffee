@@ -1,7 +1,6 @@
 
 class BaseError extends Error
   constructor: (@message) ->
-    console.log @constructor
     @name = @constructor.name
     Error.captureStackTrace @, @constructor
 
