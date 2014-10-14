@@ -22,6 +22,7 @@ wrapModel = (data, Model, opts = {}) ->
   else
     wrap data
 
+
 wrapAsync = require './wrapAsync'
 
 module.exports = (db,app) ->
@@ -130,15 +131,14 @@ module.exports = (db,app) ->
         query.run cb
       else query
 
+
     @all: (cb) ->
       query = new Query @, @r()
       query.collection = yes
       if cb? then query.run cb else query
 
 
-    @getAll: (args...) ->
-
-
+    @getAll: (id, cb) ->
       query = new Query @, @r().getAll(id)
       query.collection = yes
       if cb? then query.run cb else query
