@@ -57,7 +57,7 @@ module.exports = (db,app) ->
           RelModel.schema[opts.foreignKey] ?= String
 
           # add getter
-          @::["get" + capName] = (cb = ->) ->
+          @::["get" + capName] ?= (cb = ->) ->
             query = new Query RelModel, RelModel.r().getAll(@getId(), index: opts.foreignKey)
             query.collection = yes
             query.order opts.order if opts.order
@@ -65,11 +65,11 @@ module.exports = (db,app) ->
               query.run cb
             else query
 
-          @::["set" + capName] = (models, cb = ->) ->
+          @::["set" + capName] ?= (models, cb = ->) ->
             models = wrapModel models, RelModel
             @[name] = models
 
-          @::["add" + capSingName] = (model,  cb = ->) ->
+          @::["add" + capSingName] ?= (model,  cb = ->) ->
             model = wrapModel model, RelModel
             @[name] ?= []
             model[opts.foreignKey] = @getId() if @getId()?
