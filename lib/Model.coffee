@@ -3,6 +3,7 @@ typeOf = require('typeof')
 inflection = require "inflection"
 async = require 'async'
 {ValidationError, ModelError} = require './errors'
+_ = require 'lodash'
 
 isArray = (value) ->
   typeOf(value) is 'array' or (typeOf(value) is 'object' and typeOf(value.type) is 'array')
@@ -20,7 +21,6 @@ wrapModel = (data, Model, opts = {}) ->
     wrap item for item in data
   else
     wrap data
-
 
 wrapAsync = require './wrapAsync'
 
@@ -119,8 +119,13 @@ module.exports = (db,app) ->
           cb err, data
 
     @get: (id, cb) ->
-      query = new Query @, @r().getAll(id)
-      query.collection = no
+      if _.isString id
+        query = new Query @, @r().getAll(id)
+        query.collection = no
+      else
+        query = new Query @, @r().getAll.apply @r(), id
+        query.collection = yes
+
       if cb?
         query.run cb
       else query
@@ -131,7 +136,9 @@ module.exports = (db,app) ->
       if cb? then query.run cb else query
 
 
-    @getAll: (id, cb) ->
+    @getAll: (args...) ->
+
+
       query = new Query @, @r().getAll(id)
       query.collection = yes
       if cb? then query.run cb else query
