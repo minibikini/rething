@@ -40,7 +40,7 @@ module.exports = class DbManager extends EventEmitter
     @pool = Pool(@config)
     @r = @pool.r
 
-  run: (query, cb = ->) ->
+  run: (query, cb) ->
     @pool.run query, cb
 
   exec: (query) ->
@@ -58,7 +58,7 @@ module.exports = class DbManager extends EventEmitter
       else cb err
     @
 
-  close: (cb = ->) ->
+  close: (cb) ->
     @pool.drain =>
       @pool.destroyAllNow cb
 
