@@ -102,8 +102,11 @@ module.exports = (db,app) ->
             query.run cb
           else query
 
+    @db: ->
+      db.r.db(db.config.db)
+
     @r: ->
-      db.r.db(db.config.db).table @tableName
+      @db().table @tableName
 
     @wrap: (data, cb) -> wrapAsync data, @, {isNew: no, wrapRelated: yes}, cb
 
