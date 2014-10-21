@@ -209,8 +209,12 @@ module.exports = (db,app) ->
 
     beforeSave: (cb) -> cb()
 
-    save: (cb) ->
+    save: (saveOpts = {}, cb) ->
       beforeSave = Promise.promisify @beforeSave, @
+
+      if _.isFunction saveOpts
+        cb = saveOpts
+        saveOpts = {}
 
       promise = beforeSave().then =>
         # TODO: defaults, required
@@ -249,7 +253,7 @@ module.exports = (db,app) ->
 
           if @isNewRecord
             newObj.id = @getId() if @getId()?
-            db.run(c.r().insert(newObj)).then (reply) =>
+            db.run(c.r().insert(newObj, saveOpts)).then (reply) =>
               unless @id?
                 @id = reply?.generated_keys?[0]
 
@@ -260,7 +264,7 @@ module.exports = (db,app) ->
           else
             @saveRelated().then =>
               if @getId()?
-                db.run(c.r().get(@getId()).update(newObj)).then => @
+                db.run(c.r().get(@getId()).update(newObj, saveOpts)).then => @
               else
                 reject new ModelError "undefined id"
 
