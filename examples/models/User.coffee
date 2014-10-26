@@ -1,36 +1,37 @@
-module.exports = (db, app) ->
-  class User extends db.Model
-    #### Some defaults:
-    # @tableName: 'users'
-    # @timestamp: on
-    # @order: 'createdAt'
-    # @primaryKey: 'id'
+rething = require '../../'
 
-    @schema:
-      email:
-        type: String
-        index: on
+module.exports = class User extends rething.Model
+  #### Some defaults:
+  # @tableName: 'users'
+  # @timestamp: on
+  # @order: 'createdAt'
+  # @primaryKey: 'id'
 
-      firstName: String
-      lastName: String
-      password: String
-      username: String
-      roles:
-        type: String
-        default: ['user']
+  @schema:
+    email:
+      type: String
+      index: on
 
-      something:
-        type: String
-        default: -> 'some string'
+    firstName: String
+    lastName: String
+    password: String
+    username: String
+    roles:
+      type: String
+      default: ['user']
 
-    # relations
-    @hasMany 'posts'
-    @hasMany 'comments'
+    something:
+      type: String
+      default: -> 'some string'
 
-    # Instanse methods
-    fullName: -> @firstName + ' ' + @lastName
+  # relations
+  @hasMany 'posts'
+  @hasMany 'comments'
 
-    # beforeSave: (cb) ->
-    #   cb null
+  # Instanse methods
+  fullName: -> @firstName + ' ' + @lastName
 
-    # @someStatic: ->
+  # beforeSave: (cb) ->
+  #   cb null
+
+  # @someStatic: ->

@@ -1,6 +1,6 @@
 {
   "name": "rething",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Rething - an ORM for RethinkDB (WIP)",
   "main": "index.js",
   "scripts": {

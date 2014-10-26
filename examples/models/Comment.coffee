@@ -1,53 +1,54 @@
-module.exports = (db, app) ->
-  class Comment extends db.Model
-    @schema:
-      body: String
+rething = require '../../'
 
-    # relations
-    @belongsTo 'author', model: 'User'
-    @belongsTo 'post'
+module.exports = class Comment extends rething.Model
+  @schema:
+    body: String
 
-    # # Instanse methods
-    # fullName: -> @firstName + ' ' + @lastName
+  # relations
+  @belongsTo 'author', model: 'User'
+  @belongsTo 'post'
 
-    # beforeSave: (cb) ->
-    #   db.r.table('settings').get('lastPollId')
-    #     .update({ value: db.rr.row('value').add(1)}, {return_vals: true})
-    #     .run db.conn, (err, results) =>
-    #       @id = results.new_val.value
-    #       app.lastPollid = @id
-    #       cb err
+  # # Instanse methods
+  # fullName: -> @firstName + ' ' + @lastName
 
-    # @addAnswer: (pollId, questions, cb) ->
-    #   addAnswer = (q, cb) ->
-    #     db.models.Question.addAnswer q, cb
+  # beforeSave: (cb) ->
+  #   db.r.table('settings').get('lastPollId')
+  #     .update({ value: db.rr.row('value').add(1)}, {return_vals: true})
+  #     .run db.conn, (err, results) =>
+  #       @id = results.new_val.value
+  #       app.lastPollid = @id
+  #       cb err
 
-    #   async.each questions, addAnswer, (err) ->
-    #     return cb err if err?
-    #     db.r.table('polls')
-    #       .get(pollId)
-    #       .update(responses: db.rr.row('responses').default(0).add(1))
-    #       .run db.conn, cb
+  # @addAnswer: (pollId, questions, cb) ->
+  #   addAnswer = (q, cb) ->
+  #     db.models.Question.addAnswer q, cb
 
-    # getStrId: -> @id.toString 36
+  #   async.each questions, addAnswer, (err) ->
+  #     return cb err if err?
+  #     db.r.table('polls')
+  #       .get(pollId)
+  #       .update(responses: db.rr.row('responses').default(0).add(1))
+  #       .run db.conn, cb
 
-    # getUrl: (results = no) ->
-    #   if results
-    #     @getUrl() + '/results'
-    #   else
-    #     "/p/#{@getStrId()}"
+  # getStrId: -> @id.toString 36
 
-    # getFullUrl: ->
-    #   "http://flisti.com/p/#{@getStrId()}"
+  # getUrl: (results = no) ->
+  #   if results
+  #     @getUrl() + '/results'
+  #   else
+  #     "/p/#{@getStrId()}"
 
-    # getDisqusId: ->
-    #   if @importId
-    #     if @importId[0..2] is 'com'
-    #       @importId[3..]
-    #   else
-    #     @getStrId()
+  # getFullUrl: ->
+  #   "http://flisti.com/p/#{@getStrId()}"
 
-    # addWidgetView: (cb = ->) ->
-    #   @constructor.r().get(@id)
-    #     .update(widgetViews: db.rr.row('widgetViews').default(0).add(1))
-    #     .run db.conn, cb
+  # getDisqusId: ->
+  #   if @importId
+  #     if @importId[0..2] is 'com'
+  #       @importId[3..]
+  #   else
+  #     @getStrId()
+
+  # addWidgetView: (cb = ->) ->
+  #   @constructor.r().get(@id)
+  #     .update(widgetViews: db.rr.row('widgetViews').default(0).add(1))
+  #     .run db.conn, cb

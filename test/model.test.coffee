@@ -1,8 +1,7 @@
 should = require('chai').should()
-AppSpine = require 'appspine'
-Rething = require '../'
 Faker = require 'faker'
-typeOf = require 'typeof'
+config = require('./config/config')
+db = require '../'
 
 getFakeUserData = ->
   firstName: Faker.Name.firstName()
@@ -15,22 +14,20 @@ getFakePost = ->
   body: Faker.Lorem.paragraphs 3
 
 describe 'RethinkDB ORM', ->
-  app = null
   User = null
 
   before (done) ->
     @timeout 15000
-    app = new AppSpine require './config/config'
-    app.db = new Rething app
-    app.db.connect()
-    app.db.once 'ready', ->
 
-      User = app.db.models.User
+    for name in ['User', 'Post', 'Comment']
+      db.addModel require "../examples/models/#{name}"
+
+    db.init(config.rethinkdb).then ->
+      User = db.models.User
       done()
 
   after (done) ->
-    app.db.close done
-  #   r.dbDrop(app.config.rethinkdb.db).run app.db.getConn(), done
+    db.close done
 
   describe 'Model Instanse', ->
     user = null
@@ -80,12 +77,12 @@ describe 'RethinkDB ORM', ->
           should.not.exist err
           user.should.have.property 'createdAt'
 
-          query = app.db.pool.r
-            .db app.config.rethinkdb.db
+          query = db.pool.r
+            .db config.rethinkdb.db
             .table User.tableName
             .get user.id
 
-          app.db.pool.run query, (err, data) ->
+          db.pool.run query, (err, data) ->
             should.not.exist err
             data.should.have.property 'createdAt'
             done()
