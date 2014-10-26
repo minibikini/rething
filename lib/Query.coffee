@@ -7,7 +7,7 @@ beautify = (str) -> js_beautify str, indent_size: 2
 
 wrapAsync = require './wrapAsync'
 
-module.exports = (db,app) ->
+module.exports = (db) ->
   class Query
     collection: no
     ordered: no
