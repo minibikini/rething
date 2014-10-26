@@ -25,16 +25,16 @@ wrapModel = (data, Model, opts = {}) ->
 
 wrapAsync = require './wrapAsync'
 
-module.exports = (db,app) ->
-  Query = require('./Query')(db,app)
-  {Promise} = db
+module.exports = (db) ->
+  Query = require('./Query')(db)
+  {Promise, run, r} = db
 
   class Model extends EventEmitter
     isNewRecord: yes
     @primaryKey: 'id'
 
     @hasMany: (name, opts = {}) ->
-      db.once 'modelsLoaded', =>
+      db.initModelsTasks.push =>
         that = @
         @relations ?= {}
         @relations.hasMany ?= {}
@@ -79,7 +79,7 @@ module.exports = (db,app) ->
 
 
     @belongsTo: (name, opts = {}) ->
-      db.once 'modelsLoaded', =>
+      db.initModelsTasks.push =>
         @relations ?= {}
         @relations.belongsTo ?= {}
 
@@ -305,18 +305,16 @@ module.exports = (db,app) ->
 
       async.each @[rel.name], save, cb
 
-    @createIndexes: (cb) ->
-      db.run @r().indexList(), (err, existed) =>
-        indexes = ([name, val] for name, val of @indexes)
-        createIndex = ([name, val], cb) =>
-          return cb() if name in existed
-          if typeOf(val) is 'boolean'
-            db.run @r().indexCreate(name), cb
+    @createIndexes: ->
+      run(@table().indexList()).then (existed) =>
+        tasks = for name, val of @indexes when name not in existed
+          if _.isBoolean val
+            run @table().indexCreate name
           else
-            db.run @r().indexCreate(name, val), cb
+            run @table().indexCreate name, val
 
-        async.each indexes, createIndex, (err) =>
-          db.run @r().indexWait(), cb
+        Promise.all(tasks).then =>
+          run @table().indexWait()
 
     @relatedQuery: (withRels, query)->
       query = query.map (item) =>
