@@ -106,8 +106,9 @@ module.exports = (db) ->
     @db: ->
       db.r.db(db.config.db)
 
-    @r: ->
-      @db().table @tableName
+    @r: -> @table()
+
+    @table: -> @db().table @tableName
 
     @wrap: (data, cb) -> wrapAsync data, @, {isNew: no, wrapRelated: yes}, cb
 
