@@ -1,6 +1,6 @@
 {
   "name": "rething",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Rething - an ORM for RethinkDB (WIP)",
   "main": "index.js",
   "scripts": {
@@ -30,7 +30,7 @@
     "inflecto": "^1.0.2",
     "js-beautify": "^1.5.1",
     "lodash": "^2.4.1",
-    "rethinkdb-pool": "git://github.com/minibikini/rethinkdb-pool",
+    "rethinkdb-pool": "^0.2.1",
     "typeof": "^1.0.0"
   },
   "devDependencies": {
