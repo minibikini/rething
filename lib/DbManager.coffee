@@ -3,12 +3,13 @@ EventEmitter = require("events").EventEmitter
 inflection = require "inflection"
 async = require "async"
 typeOf = require 'typeof'
-Pool = require 'rethinkdb-pool'
+# Pool = require 'rethinkdb-pool'
+rethinkdbdash = require('rethinkdbdash')
 Promise = require 'bluebird'
 
 module.exports = class DbManager extends EventEmitter
-  @Pool: Pool
-  Pool: Pool
+  # @Pool: Pool
+  # Pool: Pool
   Promise: Promise
   @Promise: Promise
   conn: null
@@ -37,17 +38,16 @@ module.exports = class DbManager extends EventEmitter
       else
         @emit 'ready'
 
-    @pool = Pool(@config)
-    @r = @pool.r
+    @r = rethinkdbdash @config
+
+    # @pool = Pool(@config)
+    # @r = @pool.r
 
   run: (query, cb) ->
-    @pool.run query, cb
+    query.run().nodefy(cb)
 
   exec: (query) ->
-    new Promise (resolve, reject) ->
-      query.run (err, result) ->
-        if err then reject(err)
-        else resolve result
+    query.run()
 
 
   connect: (cb = ->) ->
@@ -59,8 +59,9 @@ module.exports = class DbManager extends EventEmitter
     @
 
   close: (cb) ->
-    @pool.drain =>
-      @pool.destroyAllNow cb
+    @r.getPoolMaster().drain()
+    cb()
+
 
   checkDb: ->
     @run @r.dbList(), (err, databases) =>

@@ -1,22 +1,21 @@
 module.exports = require './DbManager'
 
-Pool = require 'rethinkdb-pool'
 Promise = require 'bluebird'
 {tableize} = require 'inflecto'
 _ = require 'lodash'
 
+rethinkdbdash = require('rethinkdbdash')
+
 {all} = Promise
 
 db =
-  Pool: Pool
   Promise: Promise
   models: {}
   initModelsTasks: []
 
   init: (@config = {}) ->
     @config.ensureIndexes ?= yes
-    @pool ?= Pool(@config)
-    @r ?= @pool.r
+    @r ?= rethinkdbdash @config
 
     @checkDb() # create db if not exist
       .then @checkTables
@@ -37,17 +36,13 @@ db =
     all (Promise.try task for task in db.initModelsTasks)
 
   run: (query, cb) ->
-    db.pool.run query, cb
+    query.run().nodeify(cb)
 
   exec: (query) ->
-    new Promise (resolve, reject) ->
-      query.run (err, result) ->
-        if err then reject(err)
-        else resolve result
+    query.run()
 
   close: (cb) ->
-    db.pool.drain ->
-      db.pool.destroyAllNow cb
+    @r.getPoolMaster().drain(cb);
 
   # create db if it not exists yet
   checkDb: ->
