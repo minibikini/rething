@@ -30,7 +30,7 @@ module.exports = (db) ->
         startTime = Date.now()
         queryStr = @query.toString()
 
-      db.pool.run @query, (err, data) =>
+      db.run @query, (err, data) =>
         if db.config.logQueries
           console.log chalk.gray "=========================================="
           queryStr =  beautify queryStr
@@ -74,9 +74,9 @@ module.exports = (db) ->
 
           rules = for rule in rules
             if typeOf(rule) is 'string'
-              if rule[0] is '-' then db.pool.r.desc rule[1..] else rule
+              if rule[0] is '-' then db.r.desc rule[1..] else rule
             else if typeOf(rule) is 'object'
-              if rule.index[0] is '-' then index: db.pool.r.desc rule.index[1..] else rule
+              if rule.index[0] is '-' then index: db.r.desc rule.index[1..] else rule
 
           @query = @query.orderBy.apply @query, rules
           @ordered = yes
@@ -128,8 +128,8 @@ module.exports = (db) ->
         num = 1
 
       update = {}
-      update[field] = db.pool.r.row(field).add(num)
-      db.pool.run @query.update(update, returnChanges: yes), cb
+      update[field] = db.r.row(field).add(num)
+      db.run @query.update(update, returnChanges: yes), cb
 
     then: (onFulfilled, onRejected) ->
       promise = new Promise (resolve, reject) =>

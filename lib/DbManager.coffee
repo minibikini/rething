@@ -3,13 +3,10 @@ EventEmitter = require("events").EventEmitter
 inflection = require "inflection"
 async = require "async"
 typeOf = require 'typeof'
-# Pool = require 'rethinkdb-pool'
 rethinkdbdash = require('rethinkdbdash')
 Promise = require 'bluebird'
 
 module.exports = class DbManager extends EventEmitter
-  # @Pool: Pool
-  # Pool: Pool
   Promise: Promise
   @Promise: Promise
   conn: null
